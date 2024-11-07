@@ -1,0 +1,50 @@
+version: "3.7"
+# docker-compose for development processes
+
+services:
+  app:
+    build: .
+    command: ["make", "local_run"]
+    environment:
+      POSTGRES_PASSWORD: app
+      POSTGRES_USER: app
+      POSTGRES_DB: app
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - service-network
+
+  postgres:
+    image: postgres:14
+    ports:
+      - "54327:5432"
+    environment:
+      POSTGRES_PASSWORD: app
+      POSTGRES_USER: app
+      POSTGRES_DB: app
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U app -d app" ]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - service-network
+
+  liquibase:
+    image: liquibase/liquibase
+    command: --diffTypes=data --dataOutputDirectory=/liquibase/changelog/logs.out --defaults-file=/liquibase/changelog/liquibase.properties --searchPath=/liquibase/changelog/ update
+    volumes:
+      - ./migrations/:/liquibase/changelog/
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - service-network
+
+networks:
+  service-network:
+    driver: bridge
