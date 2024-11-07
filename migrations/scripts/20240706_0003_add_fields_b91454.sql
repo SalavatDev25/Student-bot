@@ -1,0 +1,1 @@
+-- Пример миграции: INSERT INTO app.departament (id, name) VALUES (2312, 'Кафедра цифровых систем и моделей');
